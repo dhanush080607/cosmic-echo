@@ -286,12 +286,9 @@ function Earth({
                   2.5
                 );
 
-              vec3 atmosphere =
-                vec3(0.05, 0.35, 1.0);
-
               gl_FragColor =
                 vec4(
-                  atmosphere,
+                  vec3(0.05, 0.35, 1.0),
                   intensity * 0.45
                 );
             }
@@ -328,11 +325,11 @@ function CameraController({
 function CosmicWorld({
   onEarthHover,
   onEarthSelect,
-  earthSelected,
+  selected,
 }: {
   onEarthHover: (hovered: boolean) => void;
   onEarthSelect: () => void;
-  earthSelected: boolean;
+  selected: boolean;
 }) {
   return (
     <>
@@ -358,83 +355,26 @@ function CosmicWorld({
         onSelect={onEarthSelect}
       />
 
-      <CameraController
-        selected={earthSelected}
-      />
+      <CameraController selected={selected} />
     </>
   );
 }
 
-function EarthLabel({
-  visible,
-  selected,
+export default function CosmicScene({
+  onEarthSelect,
 }: {
-  visible: boolean;
-  selected: boolean;
+  onEarthSelect: () => void;
 }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: "50%",
-        top: "50%",
-        transform: visible
-          ? "translate(135px, -120px)"
-          : "translate(120px, -110px)",
-        opacity: visible ? 1 : 0,
-        pointerEvents: "none",
-        transition:
-          "opacity 300ms ease, transform 300ms ease",
-      }}
-    >
-      <div
-        style={{
-          color: "#ffffff",
-          fontFamily:
-            "Inter, system-ui, sans-serif",
-          fontSize: "11px",
-          fontWeight: 500,
-          letterSpacing: "0.22em",
-        }}
-      >
-        EARTH
-      </div>
-
-      <div
-        style={{
-          marginTop: "6px",
-          color: "rgba(255,255,255,0.55)",
-          fontFamily:
-            "Inter, system-ui, sans-serif",
-          fontSize: "8px",
-          letterSpacing: "0.16em",
-        }}
-      >
-        {selected
-          ? "SELECTED · ENTERING EARTH"
-          : "PLANET · CLICK TO LISTEN"}
-      </div>
-
-      <div
-        style={{
-          width: "45px",
-          height: "1px",
-          marginTop: "12px",
-          background: "#4da6ff",
-          boxShadow:
-            "0 0 12px rgba(77,166,255,0.8)",
-        }}
-      />
-    </div>
-  );
-}
-
-export default function CosmicScene() {
   const [earthHovered, setEarthHovered] =
     useState(false);
 
   const [earthSelected, setEarthSelected] =
     useState(false);
+
+  const handleEarthSelect = () => {
+    setEarthSelected(true);
+    onEarthSelect();
+  };
 
   return (
     <div
@@ -454,10 +394,8 @@ export default function CosmicScene() {
       >
         <CosmicWorld
           onEarthHover={setEarthHovered}
-          onEarthSelect={() => {
-            setEarthSelected(true);
-          }}
-          earthSelected={earthSelected}
+          onEarthSelect={handleEarthSelect}
+          selected={earthSelected}
         />
 
         <OrbitControls
@@ -467,10 +405,41 @@ export default function CosmicScene() {
         />
       </Canvas>
 
-      <EarthLabel
-        visible={earthHovered || earthSelected}
-        selected={earthSelected}
-      />
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(135px, -120px)",
+          opacity: earthHovered ? 1 : 0,
+          pointerEvents: "none",
+          transition: "opacity 300ms ease",
+        }}
+      >
+        <div
+          style={{
+            color: "#ffffff",
+            fontSize: "11px",
+            letterSpacing: "0.22em",
+            fontFamily:
+              "Inter, system-ui, sans-serif",
+          }}
+        >
+          EARTH
+        </div>
+
+        <div
+          style={{
+            marginTop: "6px",
+            color:
+              "rgba(255,255,255,0.55)",
+            fontSize: "8px",
+            letterSpacing: "0.16em",
+          }}
+        >
+          PLANET · CLICK TO LISTEN
+        </div>
+      </div>
     </div>
   );
 }
