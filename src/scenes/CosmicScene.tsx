@@ -42,28 +42,6 @@ function Earth({
     }
   });
 
-  const handlePointerEnter = (
-    event: THREE.Event
-  ) => {
-    event.stopPropagation();
-
-    setHovered(true);
-    onHoverChange(true);
-
-    document.body.style.cursor = "pointer";
-  };
-
-  const handlePointerLeave = (
-    event: THREE.Event
-  ) => {
-    event.stopPropagation();
-
-    setHovered(false);
-    onHoverChange(false);
-
-    document.body.style.cursor = "default";
-  };
-
   const vertexShader = `
     varying vec3 vNormal;
     varying vec3 vPosition;
@@ -92,7 +70,9 @@ function Earth({
       p *= 17.0;
 
       return fract(
-        p.x * p.y * p.z *
+        p.x *
+        p.y *
+        p.z *
         (p.x + p.y + p.z)
       );
     }
@@ -247,12 +227,24 @@ function Earth({
     <group>
       <mesh
         ref={earthRef}
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
+        onPointerEnter={(event) => {
+          event.stopPropagation();
+
+          setHovered(true);
+          onHoverChange(true);
+
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerLeave={(event) => {
+          event.stopPropagation();
+
+          setHovered(false);
+          onHoverChange(false);
+
+          document.body.style.cursor = "default";
+        }}
       >
-        <sphereGeometry
-          args={[2, 128, 128]}
-        />
+        <sphereGeometry args={[2, 128, 128]} />
 
         <shaderMaterial
           vertexShader={vertexShader}
@@ -264,9 +256,7 @@ function Earth({
         ref={atmosphereRef}
         scale={1.055}
       >
-        <sphereGeometry
-          args={[2, 128, 128]}
-        />
+        <sphereGeometry args={[2, 128, 128]} />
 
         <shaderMaterial
           transparent
@@ -320,71 +310,11 @@ function Earth({
   );
 }
 
-function EarthLabel({
-  visible,
+function CosmicWorld({
+  onEarthHover,
 }: {
-  visible: boolean;
+  onEarthHover: (hovered: boolean) => void;
 }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: "50%",
-        top: "50%",
-        transform: visible
-          ? "translate(135px, -120px)"
-          : "translate(125px, -120px)",
-        pointerEvents: "none",
-        opacity: visible ? 1 : 0,
-        transition:
-          "opacity 300ms ease, transform 300ms ease",
-      }}
-    >
-      <div
-        style={{
-          color: "#ffffff",
-          fontFamily:
-            "Inter, system-ui, sans-serif",
-          letterSpacing: "0.22em",
-          fontSize: "11px",
-          fontWeight: 500,
-        }}
-      >
-        EARTH
-      </div>
-
-      <div
-        style={{
-          marginTop: "6px",
-          color: "rgba(255,255,255,0.55)",
-          fontFamily:
-            "Inter, system-ui, sans-serif",
-          letterSpacing: "0.16em",
-          fontSize: "8px",
-        }}
-      >
-        PLANET · CLICK TO LISTEN
-      </div>
-
-      <div
-        style={{
-          width: "45px",
-          height: "1px",
-          marginTop: "12px",
-          background:
-            "rgba(77,166,255,0.8)",
-          boxShadow:
-            "0 0 12px rgba(77,166,255,0.8)",
-        }}
-      />
-    </div>
-  );
-}
-
-function Scene() {
-  const [earthHovered, setEarthHovered] =
-    useState(false);
-
   return (
     <>
       <Stars
@@ -404,18 +334,75 @@ function Scene() {
         intensity={3}
       />
 
-      <Earth
-        onHoverChange={setEarthHovered}
-      />
-
-      <EarthLabel
-        visible={earthHovered}
-      />
+      <Earth onHoverChange={onEarthHover} />
     </>
   );
 }
 
+function EarthLabel({
+  visible,
+}: {
+  visible: boolean;
+}) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: "50%",
+        top: "50%",
+        transform: visible
+          ? "translate(135px, -120px)"
+          : "translate(120px, -110px)",
+        opacity: visible ? 1 : 0,
+        pointerEvents: "none",
+        transition:
+          "opacity 300ms ease, transform 300ms ease",
+      }}
+    >
+      <div
+        style={{
+          color: "#ffffff",
+          fontFamily:
+            "Inter, system-ui, sans-serif",
+          fontSize: "11px",
+          fontWeight: 500,
+          letterSpacing: "0.22em",
+        }}
+      >
+        EARTH
+      </div>
+
+      <div
+        style={{
+          marginTop: "6px",
+          color: "rgba(255,255,255,0.55)",
+          fontFamily:
+            "Inter, system-ui, sans-serif",
+          fontSize: "8px",
+          letterSpacing: "0.16em",
+        }}
+      >
+        PLANET · CLICK TO LISTEN
+      </div>
+
+      <div
+        style={{
+          width: "45px",
+          height: "1px",
+          marginTop: "12px",
+          background: "#4da6ff",
+          boxShadow:
+            "0 0 12px rgba(77,166,255,0.8)",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function CosmicScene() {
+  const [earthHovered, setEarthHovered] =
+    useState(false);
+
   return (
     <div
       style={{
@@ -432,13 +419,19 @@ export default function CosmicScene() {
         }}
         dpr={[1, 2]}
       >
-        <Scene />
+        <CosmicWorld
+          onEarthHover={setEarthHovered}
+        />
 
         <OrbitControls
           enablePan={false}
           enableZoom={false}
         />
       </Canvas>
+
+      <EarthLabel
+        visible={earthHovered}
+      />
     </div>
   );
 }
