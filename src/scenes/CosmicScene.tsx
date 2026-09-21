@@ -1,12 +1,14 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import { useRef, useState } from "react";
 import * as THREE from "three";
 
 function Earth({
   onHoverChange,
+  onSelect,
 }: {
   onHoverChange: (hovered: boolean) => void;
+  onSelect: () => void;
 }) {
   const earthRef = useRef<THREE.Mesh>(null);
   const atmosphereRef = useRef<THREE.Mesh>(null);
@@ -70,9 +72,7 @@ function Earth({
       p *= 17.0;
 
       return fract(
-        p.x *
-        p.y *
-        p.z *
+        p.x * p.y * p.z *
         (p.x + p.y + p.z)
       );
     }
@@ -168,11 +168,7 @@ function Earth({
         fbm(vPosition * 3.8);
 
       clouds =
-        smoothstep(
-          0.62,
-          0.72,
-          clouds
-        );
+        smoothstep(0.62, 0.72, clouds);
 
       color =
         mix(
@@ -229,19 +225,19 @@ function Earth({
         ref={earthRef}
         onPointerEnter={(event) => {
           event.stopPropagation();
-
           setHovered(true);
           onHoverChange(true);
-
           document.body.style.cursor = "pointer";
         }}
         onPointerLeave={(event) => {
           event.stopPropagation();
-
           setHovered(false);
           onHoverChange(false);
-
           document.body.style.cursor = "default";
+        }}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect();
         }}
       >
         <sphereGeometry args={[2, 128, 128]} />
@@ -291,11 +287,7 @@ function Earth({
                 );
 
               vec3 atmosphere =
-                vec3(
-                  0.05,
-                  0.35,
-                  1.0
-                );
+                vec3(0.05, 0.35, 1.0);
 
               gl_FragColor =
                 vec4(
@@ -310,10 +302,37 @@ function Earth({
   );
 }
 
+function CameraController({
+  selected,
+}: {
+  selected: boolean;
+}) {
+  const { camera } = useThree();
+
+  useFrame((_, delta) => {
+    const targetPosition = selected
+      ? new THREE.Vector3(0, 0, 4.5)
+      : new THREE.Vector3(0, 0, 8);
+
+    camera.position.lerp(
+      targetPosition,
+      1 - Math.exp(-delta * 2.5)
+    );
+
+    camera.lookAt(0, 0, 0);
+  });
+
+  return null;
+}
+
 function CosmicWorld({
   onEarthHover,
+  onEarthSelect,
+  earthSelected,
 }: {
   onEarthHover: (hovered: boolean) => void;
+  onEarthSelect: () => void;
+  earthSelected: boolean;
 }) {
   return (
     <>
@@ -334,15 +353,24 @@ function CosmicWorld({
         intensity={3}
       />
 
-      <Earth onHoverChange={onEarthHover} />
+      <Earth
+        onHoverChange={onEarthHover}
+        onSelect={onEarthSelect}
+      />
+
+      <CameraController
+        selected={earthSelected}
+      />
     </>
   );
 }
 
 function EarthLabel({
   visible,
+  selected,
 }: {
   visible: boolean;
+  selected: boolean;
 }) {
   return (
     <div
@@ -382,7 +410,9 @@ function EarthLabel({
           letterSpacing: "0.16em",
         }}
       >
-        PLANET · CLICK TO LISTEN
+        {selected
+          ? "SELECTED · ENTERING EARTH"
+          : "PLANET · CLICK TO LISTEN"}
       </div>
 
       <div
@@ -403,6 +433,9 @@ export default function CosmicScene() {
   const [earthHovered, setEarthHovered] =
     useState(false);
 
+  const [earthSelected, setEarthSelected] =
+    useState(false);
+
   return (
     <div
       style={{
@@ -421,16 +454,22 @@ export default function CosmicScene() {
       >
         <CosmicWorld
           onEarthHover={setEarthHovered}
+          onEarthSelect={() => {
+            setEarthSelected(true);
+          }}
+          earthSelected={earthSelected}
         />
 
         <OrbitControls
           enablePan={false}
           enableZoom={false}
+          enabled={!earthSelected}
         />
       </Canvas>
 
       <EarthLabel
-        visible={earthHovered}
+        visible={earthHovered || earthSelected}
+        selected={earthSelected}
       />
     </div>
   );
